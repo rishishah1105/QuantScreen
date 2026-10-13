@@ -4,9 +4,9 @@
 
 [![Tests](https://github.com/rishishah1105/QuantScreen/actions/workflows/tests.yml/badge.svg)](https://github.com/rishishah1105/QuantScreen/actions/workflows/tests.yml)
 
-**Live demo:** https://YOUR-APP.streamlit.app
+**Live demo:** https://quantscreen-rishishah.streamlit.app/
 
-![QuantScreen backtest view]("C:\Users\Rishi\Downloads\screenshot-dark.png")
+![QuantScreen backtest view](docs/screenshot-dark.png)
 
 ---
 
