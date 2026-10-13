@@ -1,9 +1,24 @@
+# Two themes. The viewer switches between them from the ⋮ menu.
+# Custom panels in app/main.py are theme-neutral, and charts take their
+# text and grid colours from Streamlit, so both modes stay in sync.
+
 [theme]
-base = "light"
+baseRadius = "0.6rem"
+showSidebarBorder = true
+
+[theme.light]
 primaryColor = "#2a78d6"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f2f4f7"
 textColor = "#1c2333"
+borderColor = "#e4e7ec"
+
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#101826"
+secondaryBackgroundColor = "#182235"
+textColor = "#e6e9ef"
+borderColor = "#2a3650"
 
 [browser]
 gatherUsageStats = false

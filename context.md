@@ -282,12 +282,24 @@ Risk-free rate: 6.5% annualised (approximate Indian 10-year bond yield).
 
 ## Streamlit UI Layout
 
-Implemented in app/main.py. Sidebar: strategy preset, fundamentals (each filter
-switched on/off with a toggle), technicals, backtest settings. Main panel:
-matching-stocks table, "why is a stock in or out?" explainer, Run backtest
-button, verdict sentence, five headline metrics vs Nifty, growth-of-₹100 chart,
-drawdown chart, random-entry histogram, trade log with CSV download,
-methodology notes. Results are marked stale when filters change.
+Implemented in app/main.py.
+- Header band (navy in both themes): name, one-line purpose, Nifty 50 last
+  close and 1-year change, stocks with complete fundamentals, data dates.
+- Tabs: Screener / Backtest / How it works.
+- Sidebar: strategy preset, fundamentals (each filter switched on/off with a
+  toggle), technicals, backtest settings.
+- Screener tab: matching-stocks table with 3-month sparklines, "why is a stock
+  in or out?" explainer.
+- Backtest tab: Run backtest button, verdict sentence in a highlighted panel,
+  five metric cards vs Nifty, growth-of-₹100 chart, drawdown chart,
+  random-entry histogram, trade log with CSV download. Results are marked
+  stale when filters change.
+- Light and dark themes (.streamlit/config.toml), switched from the ⋮ menu;
+  the default follows the visitor's system setting. Custom panels use
+  translucent fills and inherited text colour, and charts take text/grid
+  colours from Streamlit, so a theme switch updates everything instantly.
+- Chart colours: strategy #3283e0, Nifty #e2622e — validated for colour-blind
+  separation on both backgrounds.
 
 Original sketch:
 
@@ -438,6 +450,7 @@ Done when:
 | Plain-English verdict above the metrics | Says in one sentence whether timing beat random entry |
 | Strategy presets in the sidebar | One click to a meaningful demo |
 | Blue = strategy, orange = Nifty in every chart | Colour-blind-safe pair, fixed per entity |
+| Theme-neutral custom styling | Light/dark switch needs no rerun to look right |
 | SQLite not PostgreSQL | Simple, local, no setup overhead |
 | Streamlit not React | Python only, fast to build, deployable |
 | Fixed holding period | Simpler backtester, explainable in interviews |

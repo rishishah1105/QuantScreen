@@ -57,7 +57,7 @@ def _text(at):
 
 
 def test_loads_with_default_preset(app):
-    assert app.title[0].value == "QuantScreen"
+    assert "QuantScreen" in _text(app) and 'class="qs-band"' in _text(app)
     assert app.selectbox(key="preset").value == "Oversold quality"
     assert "matching stock" in _text(app)
 
