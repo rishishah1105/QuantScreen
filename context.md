@@ -114,12 +114,16 @@ QuantScreen/
 │   └── metrics.py        → Total/annualised return, Sharpe, drawdown, win rate
 │
 ├── app/
-│   └── main.py           → Streamlit UI
+│   └── main.py           → Streamlit UI (run: streamlit run app/main.py)
+│
+├── .streamlit/
+│   └── config.toml       → theme colours
 │
 ├── tests/
 │   ├── conftest.py       → synthetic test database with known answers
 │   ├── test_screener.py  → screener + indicator tests
-│   └── test_backtester.py → backtester, metrics, corporate-action tests (run: pytest -v)
+│   ├── test_backtester.py → backtester, metrics, corporate-action tests
+│   └── test_app.py       → UI smoke tests with Streamlit AppTest (run: pytest -v)
 │
 ├── pytest.ini
 ├── context.md            → This file
@@ -278,6 +282,15 @@ Risk-free rate: 6.5% annualised (approximate Indian 10-year bond yield).
 
 ## Streamlit UI Layout
 
+Implemented in app/main.py. Sidebar: strategy preset, fundamentals (each filter
+switched on/off with a toggle), technicals, backtest settings. Main panel:
+matching-stocks table, "why is a stock in or out?" explainer, Run backtest
+button, verdict sentence, five headline metrics vs Nifty, growth-of-₹100 chart,
+drawdown chart, random-entry histogram, trade log with CSV download,
+methodology notes. Results are marked stale when filters change.
+
+Original sketch:
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  Sidebar              │  Main Panel              │
@@ -358,7 +371,7 @@ Done when:
 
 ---
 
-### Chunk 4 — Streamlit UI (3-4 hrs)
+### Chunk 4 — Streamlit UI (3-4 hrs) — DONE
 **Goal:** Connect all logic into a working interface
 
 Steps:
@@ -422,6 +435,9 @@ Done when:
 | 0.1% cost per side | Realistic brokerage + STT + slippage |
 | Random-entry baseline | Shows whether TA timing beats luck |
 | Mutation-tested backtester | Deliberately broken versions must fail the tests |
+| Plain-English verdict above the metrics | Says in one sentence whether timing beat random entry |
+| Strategy presets in the sidebar | One click to a meaningful demo |
+| Blue = strategy, orange = Nifty in every chart | Colour-blind-safe pair, fixed per entity |
 | SQLite not PostgreSQL | Simple, local, no setup overhead |
 | Streamlit not React | Python only, fast to build, deployable |
 | Fixed holding period | Simpler backtester, explainable in interviews |
