@@ -76,7 +76,7 @@ Normalisation happens once in `fetch.py`, so screener code uses intuitive units
 Data Layer    → yfinance + pandas + SQLite (stdlib)
 Logic Layer   → Python (screener filters + backtest engine)
 Metrics       → numpy (Sharpe, drawdown, win rate)
-TA indicators → ta library (RSI, MA)
+TA indicators → pandas (RSI with Wilder smoothing, SMAs) — own implementation, tested
 Frontend      → Streamlit
 Charts        → plotly
 Deployment    → Streamlit Community Cloud (reads committed stocks.db)
@@ -98,13 +98,19 @@ QuantScreen/
 │
 ├── engine/
 │   ├── __init__.py
-│   ├── screener.py       → FA + TA filter logic
+│   ├── indicators.py     → RSI, 50/200 SMA, 52w high/low, volume avg (backward-looking only)
+│   ├── screener.py       → fa_filter, ta_mask (shared with backtester), screen(), explain()
 │   ├── backtester.py     → Backtest loop + trade simulation
 │   └── metrics.py        → Sharpe, drawdown, win rate calc
 │
 ├── app/
 │   └── main.py           → Streamlit UI
 │
+├── tests/
+│   ├── conftest.py       → synthetic test database with known answers
+│   └── test_screener.py  → screener + indicator tests (run: pytest -v)
+│
+├── pytest.ini
 ├── context.md            → This file
 └── requirements.txt
 ```
@@ -168,10 +174,20 @@ All writes use `INSERT OR REPLACE`, so re-running fetch never creates duplicates
 - EPS → min input
 
 ### TA Filters (computed per day — these generate backtest signals)
-- RSI(14) → range slider (e.g. 30 to 70)
-- 50 MA vs 200 MA → above / below / crossover
-- Price vs 52-week high/low → within X%
-- Volume spike → toggle (volume > 20-day average × 1.5)
+- RSI(14) → min/max range (Wilder's RSI, same definition as TradingView)
+- 50 MA vs 200 MA → any / above (uptrend) / below (downtrend) /
+  golden_cross (50 MA crossed above 200 MA within the last 10 trading days)
+- Near 52-week high → close within X% below the highest high of the last 252 days
+- Near 52-week low → close within X% above the lowest low of the last 252 days
+- Volume spike → today's volume > 1.5 × average of the PREVIOUS 20 days
+
+Indicators are NaN until enough history exists (e.g. 200 days for the 200 MA,
+252 days for 52-week levels). NaN never passes a filter.
+
+### One definition, two uses
+`ta_mask()` in screener.py evaluates the TA conditions. The screener applies it
+to each stock's latest day; the backtester applies the same function to every
+historical day. Screener and backtest cannot disagree about what a condition means.
 
 ### NULL Handling Rule
 ```sql
@@ -264,7 +280,7 @@ Risk-free rate: 6.5% annualised (approximate Indian 10-year bond yield).
 
 ## Build Chunks + Timeline
 
-### Chunk 1 — Data Foundation (2-3 hrs)
+### Chunk 1 — Data Foundation (2-3 hrs) — DONE
 **Goal:** Fetch and store clean data for 100 stocks + Nifty benchmark in SQLite
 
 Steps:
@@ -283,7 +299,7 @@ Done when:
 
 ---
 
-### Chunk 2 — Screener Logic (3-4 hrs)
+### Chunk 2 — Screener Logic (3-4 hrs) — DONE
 **Goal:** Filter stocks by FA + TA criteria via Python functions
 
 Steps:
@@ -375,6 +391,9 @@ Done when:
 | Normalise yfinance units in fetch.py | ROE is a fraction, D/E is a percent in raw data |
 | NULL D/E allowed | Keeps banks/financials in the universe |
 | 4y of prices | ~1y warm-up for 200-day MA + 3y backtest |
+| ROE computed from statements when Yahoo omits it | Yahoo .info had ROE for only 24/100 NSE stocks |
+| Own RSI instead of `ta` library | `ta` fails to install on newer Python; RSI is 6 lines and tested |
+| Shared ta_mask() for screener + backtest | One definition of each condition |
 | SQLite not PostgreSQL | Simple, local, no setup overhead |
 | Streamlit not React | Python only, fast to build, deployable |
 | Fixed holding period | Simpler backtester, explainable in interviews |
@@ -385,7 +404,7 @@ Done when:
 ## Libraries to Install
 
 ```bash
-pip install yfinance pandas numpy streamlit plotly ta
+pip install -r requirements.txt
 ```
 (`sqlite3` is part of Python's standard library — do not pip install it.)
 
@@ -398,3 +417,4 @@ pip install yfinance pandas numpy streamlit plotly ta
 3. Streamlit reruns the entire script on every interaction — use @st.cache_data
 4. Verify 2-3 backtest trades by hand before trusting the full run
 5. Never let future data influence past signals (look-ahead bias)
+6. Run `pytest -v` before every commit — all tests must pass
