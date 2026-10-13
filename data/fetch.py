@@ -262,7 +262,7 @@ def verify(db_path=DB_PATH) -> bool:
     j = unexplained_jumps(load_prices(db_path))
     if len(j):
         print(f"\n  ! {len(j)} unexplained one-day move(s) > 20% — possible unadjusted corporate action:")
-        print(j[["date", "ticker", "chg_pct"]].round(1).to_string(index=False))
+        print(j[["date", "ticker", "chg_pct"]].to_string(index=False, float_format=lambda v: f"{v:.1f}"))
         print("    Check on TradingView, then add to data/corporate_actions.py")
     else:
         print("  [OK] No unexplained one-day jumps > 20%")

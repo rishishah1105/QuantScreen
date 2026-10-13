@@ -108,7 +108,7 @@ if __name__ == "__main__":
         print(f"  {a['ticker']:<12} {a['date']}  {a['method']:<8} {a['note']}")
     print(f"\nOne-day moves > {JUMP_THRESHOLD_PCT:.0f}% AFTER corrections:")
     j = find_jumps(fixed)
-    print(j.round(1).to_string(index=False) if len(j) else "  none")
+    print(j.to_string(index=False, float_format=lambda v: f"{v:.1f}") if len(j) else "  none")
     n = (j["status"] == "UNEXPLAINED").sum()
     print(f"\n{n} unexplained jump(s)." + (" Check each on TradingView, then add it to "
           "CORPORATE_ACTIONS (if fake) or KNOWN_REAL_MOVES (if real)." if n else " Data looks clean."))
