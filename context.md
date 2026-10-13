@@ -51,6 +51,15 @@ aren't included, which flatters results slightly. Mention this in the README.
 The deployed Streamlit app only *reads* the database — it never calls an API.
 (This avoids Yahoo/NSE rate limits and blocks on Streamlit Cloud servers.)
 
+**Corporate actions:** Yahoo does not always adjust for demergers. Corrections
+live in `data/corporate_actions.py` and are applied when prices are READ:
+- `restart` (TMPV, VEDL demergers): history before the action date is dropped
+- `adjust` (TRENT, 2026-01-01 price-scale break, real move ~0%): earlier prices
+  are rescaled so that day's change is 0% and full history is kept
+Real large moves (Adani/Hindenburg, election day, etc.) are listed in
+KNOWN_REAL_MOVES and stay in the data. `fetch.py` flags any new unexplained
+one-day move > 20%.
+
 **Price history:** 4 years fetched. The first ~200 trading days are warm-up
 for the 200-day MA, leaving ~3 clean years for backtesting.
 
@@ -94,21 +103,23 @@ QuantScreen/
 │   ├── tickers.py        → Nifty 50 + Next 50 constituents (live CSV + fallback)
 │   ├── database.py       → SQLite connection, table creation, upserts
 │   ├── fetch.py          → Pull + normalise + store data (run locally)
+│   ├── corporate_actions.py → Demerger / data-break corrections + jump check
 │   └── stocks.db         → SQLite database (committed to repo)
 │
 ├── engine/
 │   ├── __init__.py
 │   ├── indicators.py     → RSI, 50/200 SMA, 52w high/low, volume avg (backward-looking only)
 │   ├── screener.py       → fa_filter, ta_mask (shared with backtester), screen(), explain()
-│   ├── backtester.py     → Backtest loop + trade simulation
-│   └── metrics.py        → Sharpe, drawdown, win rate calc
+│   ├── backtester.py     → Signals, trades, equal-weight equity, benchmark, random baseline
+│   └── metrics.py        → Total/annualised return, Sharpe, drawdown, win rate
 │
 ├── app/
 │   └── main.py           → Streamlit UI
 │
 ├── tests/
 │   ├── conftest.py       → synthetic test database with known answers
-│   └── test_screener.py  → screener + indicator tests (run: pytest -v)
+│   ├── test_screener.py  → screener + indicator tests
+│   └── test_backtester.py → backtester, metrics, corporate-action tests (run: pytest -v)
 │
 ├── pytest.ini
 ├── context.md            → This file
@@ -212,16 +223,24 @@ the TA signals on those stocks. The UI states this under the results:
 > on the FA-selected universe."
 
 **Signal rule:** a signal fires on day *t* only when the full TA condition
-is true on day *t* AND was false on day *t−1* (entry on the condition turning on).
+is true on day *t* AND was false on day *t−1* AND the indicators already
+existed on *t−1* (so the end of the warm-up period is not a fake signal).
 
 **Position rules:**
 ```
 Entry   → Buy at next day's open after the signal (t+1 open)
-Exit    → Sell at close after holding period (default 30 trading days)
+Exit    → Sell at close of the Nth trading day held (N = holding period,
+          default 30; the entry day is day 1). Trades still open at the
+          window end are closed at the last close and flagged.
 Limit   → Max one open position per stock; signals during an open
-          position are ignored
+          position are ignored (a signal ON the exit day may re-enter)
+Costs   → 0.1% per side by default (brokerage + STT + slippage)
 Sizing  → Equal weight. Portfolio daily return = mean daily return
           of all stocks currently held. 0% on days with no positions.
+Window  → First 252 trading days are indicator warm-up; the backtest
+          runs on the ~3 years after that.
+No TA   → If no TA filter is set: "FA basket buy-and-hold" — every
+          FA-selected stock bought at the window's first open, held to end.
 ```
 
 **Output:**
@@ -229,7 +248,10 @@ Sizing  → Equal weight. Portfolio daily return = mean daily return
 Daily portfolio value (equity curve, starts at 100)
 vs Nifty 50 buy-and-hold (^NSEI) over the same dates
 Sharpe Ratio, Max Drawdown, Win Rate, Total Return % vs Benchmark %
-Trade log (ticker, entry date, exit date, return %)
+Trade log (ticker, signal/entry/exit dates and prices, return %)
+Random-entry baseline: same stocks, same number of trades, random dates,
+100 runs — reports what % of random runs the strategy beat
+CSV export (backtest_output/) for checking by hand in Excel
 ```
 
 ### Look-Ahead Bias Rule — Critical
@@ -247,7 +269,8 @@ Trades enter at *t+1* open, never at *t* close.
 | Sharpe Ratio      | (mean(daily_ret) − 0.065/252) / std(daily_ret) × √252                |
 | Max Drawdown      | max over t of (peak_to_date − value_t) / peak_to_date                |
 | Win Rate          | Trades with return > 0 / Total closed trades × 100                   |
-| Benchmark         | ^NSEI buy-and-hold over the same date range                          |
+| Benchmark         | ^NSEI bought at the window's first open, held to the end             |
+| Exposure          | % of trading days with at least one open position                    |
 
 Risk-free rate: 6.5% annualised (approximate Indian 10-year bond yield).
 
@@ -317,7 +340,7 @@ Done when:
 
 ---
 
-### Chunk 3 — Backtesting Engine (3-4 hrs)
+### Chunk 3 — Backtesting Engine (3-4 hrs) — DONE
 **Goal:** Simulate strategy on historical data, output metrics
 
 Steps:
@@ -394,6 +417,11 @@ Done when:
 | ROE computed from statements when Yahoo omits it | Yahoo .info had ROE for only 24/100 NSE stocks |
 | Own RSI instead of `ta` library | `ta` fails to install on newer Python; RSI is 6 lines and tested |
 | Shared ta_mask() for screener + backtest | One definition of each condition |
+| Restart vs back-adjust for corporate actions | Demerged company = new business; data break = same business |
+| Corrections applied on read, not in the DB | Re-fetching data can't undo them |
+| 0.1% cost per side | Realistic brokerage + STT + slippage |
+| Random-entry baseline | Shows whether TA timing beats luck |
+| Mutation-tested backtester | Deliberately broken versions must fail the tests |
 | SQLite not PostgreSQL | Simple, local, no setup overhead |
 | Streamlit not React | Python only, fast to build, deployable |
 | Fixed holding period | Simpler backtester, explainable in interviews |
