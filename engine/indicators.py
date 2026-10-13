@@ -20,6 +20,7 @@ from functools import lru_cache
 
 import pandas as pd
 
+from data.corporate_actions import apply_corporate_actions
 from data.database import DB_PATH, get_connection
 from data.tickers import BENCHMARK
 
@@ -74,7 +75,10 @@ def add_indicators(g: pd.DataFrame) -> pd.DataFrame:
     return g
 
 
-def load_prices(db_path=DB_PATH, include_benchmark: bool = False) -> pd.DataFrame:
+def load_prices(db_path=DB_PATH, include_benchmark: bool = False,
+                apply_corrections: bool = True) -> pd.DataFrame:
+    """Price table from stocks.db, with corporate-action corrections applied
+    (see data/corporate_actions.py) unless apply_corrections=False."""
     with get_connection(db_path) as conn:
         df = pd.read_sql(
             "SELECT date, ticker, open, high, low, close, volume FROM prices ORDER BY ticker, date",
@@ -82,7 +86,18 @@ def load_prices(db_path=DB_PATH, include_benchmark: bool = False) -> pd.DataFram
         )
     if not include_benchmark:
         df = df[df["ticker"] != BENCHMARK]
+    if apply_corrections:
+        df = apply_corporate_actions(df)
     return df.reset_index(drop=True)
+
+
+def load_benchmark(db_path=DB_PATH) -> pd.DataFrame:
+    """Nifty 50 index (^NSEI) prices."""
+    with get_connection(db_path) as conn:
+        return pd.read_sql(
+            "SELECT date, open, close FROM prices WHERE ticker = ? ORDER BY date",
+            conn, params=[BENCHMARK], parse_dates=["date"],
+        )
 
 
 def compute_indicators(prices: pd.DataFrame) -> pd.DataFrame:

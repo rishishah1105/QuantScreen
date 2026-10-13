@@ -255,6 +255,17 @@ def verify(db_path=DB_PATH) -> bool:
         print(f"  [{'PASS' if ok else 'FAIL'}] {label}")
     all_ok = all(ok for _, ok in checks)
     print("Chunk 1 done-when criteria:", "ALL PASS ✓" if all_ok else "NOT MET — see FAIL lines")
+
+    # Data-quality warning: big one-day moves not explained by a known event
+    from data.corporate_actions import unexplained_jumps
+    from engine.indicators import load_prices
+    j = unexplained_jumps(load_prices(db_path))
+    if len(j):
+        print(f"\n  ! {len(j)} unexplained one-day move(s) > 20% — possible unadjusted corporate action:")
+        print(j[["date", "ticker", "chg_pct"]].round(1).to_string(index=False))
+        print("    Check on TradingView, then add to data/corporate_actions.py")
+    else:
+        print("  [OK] No unexplained one-day jumps > 20%")
     return all_ok
 
 
