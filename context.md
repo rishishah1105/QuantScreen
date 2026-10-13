@@ -125,6 +125,9 @@ QuantScreen/
 │   ├── test_backtester.py → backtester, metrics, corporate-action tests
 │   └── test_app.py       → UI smoke tests with Streamlit AppTest (run: pytest -v)
 │
+├── .github/workflows/tests.yml → runs pytest on every push (GitHub Actions)
+├── docs/                 → README screenshots
+├── README.md
 ├── pytest.ini
 ├── context.md            → This file
 └── requirements.txt
@@ -400,7 +403,7 @@ Done when:
 
 ---
 
-### Chunk 5 — Polish + Deploy (2 hrs)
+### Chunk 5 — Polish + Deploy (2 hrs) — README + CI written; deploy pending
 **Goal:** Make it presentable and live online
 
 Steps:
@@ -416,12 +419,19 @@ Done when:
 
 ---
 
-## Resume Line (Target)
+## Resume Line
 
-> "Built QuantScreen — a hybrid FA+TA stock screener with integrated
-> backtesting engine. Screened 100 NSE stocks across 8 filters,
-> backtested strategies on 3 years of data, benchmarked against
-> Nifty 50 reporting Sharpe ratio, max drawdown and annualised returns."
+> **QuantScreen: Stock Screener & Backtesting Engine** | Python, pandas, SQLite, Streamlit, Plotly, pytest
+> - Built a screener for 100 NSE stocks combining 5 fundamental and 5 technical filters, with a
+>   backtesting engine and an interactive Streamlit dashboard deployed online.
+> - Designed a look-ahead-safe backtester (next-day-open entries, transaction costs, equal-weight
+>   portfolio), benchmarked against Nifty 50 and a 100-run random-entry baseline that separates
+>   stock-selection value from timing value.
+> - Engineered the data pipeline over 4 years of daily prices; raised fundamentals coverage from 24
+>   to 96 stocks by deriving ROE and P/E from financial statements, and detected and corrected
+>   unadjusted demergers (Tata Motors, Vedanta).
+> - Wrote 67 automated tests, including known-answer and look-ahead-bias tests, and confirmed their
+>   effectiveness through mutation testing.
 
 ---
 
