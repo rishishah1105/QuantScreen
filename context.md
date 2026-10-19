@@ -403,7 +403,8 @@ Done when:
 
 ---
 
-### Chunk 5 — Polish + Deploy (2 hrs) — README + CI written; deploy pending
+### Chunk 5 — Polish + Deploy (2 hrs) — DONE
+Live at https://quantscreen-rishishah.streamlit.app
 **Goal:** Make it presentable and live online
 
 Steps:
@@ -419,19 +420,20 @@ Done when:
 
 ---
 
-## Resume Line
+## Future Work
 
-> **QuantScreen: Stock Screener & Backtesting Engine** | Python, pandas, SQLite, Streamlit, Plotly, pytest
-> - Built a screener for 100 NSE stocks combining 5 fundamental and 5 technical filters, with a
->   backtesting engine and an interactive Streamlit dashboard deployed online.
-> - Designed a look-ahead-safe backtester (next-day-open entries, transaction costs, equal-weight
->   portfolio), benchmarked against Nifty 50 and a 100-run random-entry baseline that separates
->   stock-selection value from timing value.
-> - Engineered the data pipeline over 4 years of daily prices; raised fundamentals coverage from 24
->   to 96 stocks by deriving ROE and P/E from financial statements, and detected and corrected
->   unadjusted demergers (Tata Motors, Vedanta).
-> - Wrote 67 automated tests, including known-answer and look-ahead-bias tests, and confirmed their
->   effectiveness through mutation testing.
+- **Fairer benchmark:** add the Nifty 50 Total Return Index (includes dividends) and an
+  equal-weight Nifty 100 benchmark, to match the equal-weight, dividend-adjusted portfolio.
+- **Significance test:** report the random-entry comparison as a p-value, plus a bootstrap
+  confidence interval on the Sharpe ratio.
+- **Stress test:** fetch data from 2019 (`python -m data.fetch --years 7`) and add a
+  COVID-2020 crash window; label the March 2020 moves in `KNOWN_REAL_MOVES`.
+- **Point-in-time fundamentals:** use only figures already published on each trading day,
+  first via annual statements with SEBI's 60-day reporting lag, later from NSE/BSE XBRL filings.
+- **Robustness:** a heatmap over holding periods and RSI thresholds, plus walk-forward testing.
+- **Survivorship bias:** rebuild historical Nifty 100 membership from NSE's rebalancing notices.
+- **Exits:** optional stop-loss and take-profit rules.
+- **Data sources:** NSE Bhavcopy or Angel One SmartAPI for prices.
 
 ---
 
